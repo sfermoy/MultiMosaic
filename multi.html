@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>TeMoCo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TeMoCo">
+    <meta name="author" content="Shane Sheehan">  <style>
+
+  body {
+    font: 10px sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+   /*HTML Horizonal Legend*/
+    .country-name {
+        margin: 0 !important;
+    }
+    .key-dot {
+        display: inline-block;
+        height: 16px;
+        margin-right: 1em;
+        width: 16px;
+    }
+
+    /*.L1 { background: red;
+              opacity:0.3  }
+    .L21 { background: orange;
+             opacity:0.3}*/
+
+
+    #legend2{
+        overflow:hidden;
+    }
+    .legend2 {
+        float:left;
+        margin-right: 1em;
+    }
+    #legend{
+        margin-left: 320px;
+        font-size:16px;
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+
+<body>
+  
+  <div id="chart" style="float:left;">
+    <div id="chart2" style="float:left;">
+    <div id="legend" align="centre">
+
+  </div>
+  </div>
+  <div style="height:800px;overflow:scroll;display: inline-block;">
+      <div id="leftconc" style="width:800px;height:800px;line-height:3em;padding:5px;float:left;margin-top: 130px;font-size:12px;"> 
+
+      </div>
+      <div id="keyword" style="width:50px;height:800px;line-height:3em;padding:5px;float:left;margin-top: 130px;font-size:12px;"> 
+
+      </div>
+      <div id="rightconc" style="width:800px;height:800px;line-height:3em;padding:5px;float:left;margin-top: 130px;font-size:12px;"> 
+
+      </div>
+    </div>
+
+
+</body>
+</html>
+
+
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <!-- .attrs() -->
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+    <script>
+
+        //Count number of items per time slot
+        
+
+        d3.json("concordances.json", function(data) {
+            var countWords = [{},{},{},{},{},{},{},{},{}];
+            var countWords1 = [{},{},{},{},{},{},{},{},{}];
+            var countWordsTot ={}
+            var wordOrder = [];
+            var wordOrder1 = [];
+            var articleJSON, concJSON;
+            keyword =Object.keys(data)[0]
+            concJSON = JSON.stringify(data['gold'].split("\n").map(x => ({text: x})))
+            const concobj = JSON.parse(concJSON );
+            var leftctx = "";
+            var keywordctx ="";
+            var rightctx = "";
+            console.log("here1")
+            for (var i = 0; i < concobj.length-1; i++){
+                conc = concobj[i]['text'].split("|")
+                
+                leftctx += conc[2].slice(0, 130)+'<br> ';
+                keywordctx += conc[2].slice(130,(130 + keyword.length))+'<br> ';
+                rightctx += conc[2].slice((130 + keyword.length),conc[2].length)+'<br> ';
+
+                
+
+                lftWords = conc[2].slice(0, 130).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ");
+                lftWords = lftWords.toLowerCase()
+                lftWords = lftWords.split(' ');        
+                // console.log(lftWords.slice(-7))
+                // console.log(lftWords.slice(-5,-1))
+                lftWords = lftWords.slice(-5,-1)
+                for (var k =0; k < lftWords.length; k++) {
+                    var val = lftWords[k]
+                    if(countWords[k][val] === undefined) {
+                      countWords[k][val] = 1;
+                      countWordsTot[val] = 1;
+                        } else {
+                            countWords[k][val] = countWords[k][val] + 1;
+                            countWordsTot[val] = countWordsTot[val] + 1;
+                        }
+                    }
+
+                rightWords = conc[2].slice((130+ keyword.length),conc[2].length).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"")
+                rightWords = rightWords.replace(/\s{2,}/g," ");
+                rightWords = rightWords.toLowerCase()
+                rightWords = rightWords.split(' ');
+                rightWords = rightWords.slice(1,5)
+                // console.log(rightWords)
+                for (var j =0; j < rightWords.length; j++) {
+                    var val = rightWords[j]
+                    if(countWords[j+5][val] === undefined) {
+                      countWords[j+5][val] = 1;
+                      countWordsTot[val] = 1;
+                        } else {
+                            countWords[j+5][val] = countWords[j+5][val] + 1;
+                            countWordsTot[val] = countWordsTot[val] + 1;
+                        }
+                    }
+
+
+                var val = keyword.toLowerCase()
+                if(countWords[4][val] === undefined) {
+                  countWords[4][val] = 1;
+                    } else {
+                        countWords[4][val] = countWords[4][val] + 1;
+                    }        
+                }
+
+            for (var l = 0; l < countWords.length; l++) {
+                var dict = countWords[l]
+                var keys = Object.entries(dict).sort((a,b)=>b[1]-a[1]).map(el=>el[0])
+                wordOrder.push(keys)
+            }
+            var dicttot = countWordsTot
+            var totkeys = Object.entries(dicttot).sort((a,b)=>b[1]-a[1]).map(el=>el[0])
+            totkeys = totkeys.slice(0,20)
+            console.log(wordOrder)
+            console.log(totkeys)
+
+
+            var div = document.createElement('div');
+            div.innerHTML = leftctx;
+            div.style.textAlign='right'
+            document.getElementById("leftconc").appendChild(div);
+            var div = document.createElement('div');
+            div.innerHTML = keywordctx;
+            div.style.textAlign='center'
+            div.style.color = "red";
+            document.getElementById("keyword").appendChild(div);
+            var div = document.createElement('div');
+            div.innerHTML = rightctx;
+            document.getElementById("rightconc").appendChild(div);
+
+            var Mwidth = 1800
+            var colwidth = 200
+
+            var margin = {top: 50, right: 45, bottom: 80, left: 45},
+                width = (Mwidth) ,
+                height = 1000 ;
+            
+            svg = d3.select("#chart").append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+                 .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); 
+
+
+
+            //Draw rectangles
+            var position = 0;
+            
+            var color = d3.scale.category20();
+
+
+            for (var col = 0; col < countWords.length; col++) {
+                var heigthUsed = 0;
+                var order = wordOrder[col]
+                var max = countWords[4][keyword]
+                var colorswitch = 'gray'
+                console.log(max)
+                for (var word = 0; word < order.length; word++) {
+                    var wordstr = order[word]
+                    var boxH = countWords[col][wordstr]
+                    var rect = svg.append('rect')
+                   .attrs({ x: col*colwidth, y: heigthUsed, width: ((col+1)*(colwidth)-(col*colwidth)), height: 1000*((1.0*boxH)/max)  })
+                   .attr("id","s"+col.toString()+wordstr)
+                   .attr("fcol",color(wordstr))
+                   .style("fill",  function(d) { return col === 4 ? 'seagreen' : totkeys.includes(wordstr) ? color(wordstr): 'gray'; })
+                   // .style("stroke-color", 'black')
+                   // .style("stroke-width", 1)
+
+                   svg.append("text")
+                    .attr("x", function(d) { return (col*colwidth)+100; })
+                    .attr("y", function(d) { return heigthUsed + ((1000*((1.0*boxH)/max)) / 2) + 5; })
+                    .style("text-anchor", "middle")
+                    .style("font-size", "16px")
+                    .attr("opacity", function(d) { return boxH > 20 ? 1 : 0; })
+                    .style("fill", "white") 
+                    .text(wordstr);
+
+                    heigthUsed+=1000*((1.0*boxH)/max) ;
+                    
+                }
+            }
+
+                d3.json("concordances2.json", function(data) {
+            keyword1 =Object.keys(data)[0]
+            concJSON1 = JSON.stringify(data[keyword1].split("\n").map(x => ({text: x})))
+            const concobj1 = JSON.parse(concJSON1 );
+            var leftctx1 = "";
+            var keywordctx1 ="";
+            var rightctx1 = "";
+            console.log("here2")
+            for (var i = 0; i < concobj1.length-1; i++){
+                conc1 = concobj1[i]['text'].split("|")
+                
+                leftctx1 += conc1[2].slice(0, 130)+'<br> ';
+                keywordctx1 += conc1[2].slice(130,(130 + keyword1.length))+'<br> ';
+                rightctx1 += conc1[2].slice((130 + keyword1.length),conc1[2].length)+'<br> ';
+
+                
+
+                lftWords1 = conc1[2].slice(0, 130).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ");
+                lftWords1 = lftWords1.toLowerCase()
+                lftWords1 = lftWords1.split(' ');        
+                // console.log(lftWords.slice(-7))
+                // console.log(lftWords.slice(-5,-1))
+                lftWords1 = lftWords1.slice(-5,-1)
+                for (var k =0; k < lftWords1.length; k++) {
+                    var val = lftWords1[k]
+                    if(countWords1[k][val] === undefined) {
+                      countWords1[k][val] = 1;
+                        } else {
+                            countWords1[k][val] = countWords1[k][val] + 1;
+                        }
+                    }
+
+                rightWords1 = conc1[2].slice((130+ keyword1.length),conc1[2].length).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"")
+                rightWords1 = rightWords1.replace(/\s{2,}/g," ");
+                rightWords1 = rightWords1.toLowerCase()
+                rightWords1 = rightWords1.split(' ');
+                rightWords1 = rightWords1.slice(1,5)
+                // console.log(rightWords)
+                for (var j =0; j < rightWords1.length; j++) {
+                    var val = rightWords1[j]
+                    if(countWords1[j+5][val] === undefined) {
+                      countWords1[j+5][val] = 1;
+                        } else {
+                            countWords1[j+5][val] = countWords1[j+5][val] + 1;
+                        }
+                    }
+
+
+                var val = keyword1.toLowerCase()
+                if(countWords1[4][val] === undefined) {
+                  countWords1[4][val] = 1;
+                    } else {
+                        countWords1[4][val] = countWords1[4][val] + 1;
+                    }        
+                }
+
+            for (var l = 0; l < countWords1.length; l++) {
+                var dict1 = countWords1[l]
+                var keys1 = Object.entries(dict1).sort((a,b)=>b[1]-a[1]).map(el=>el[0])
+                wordOrder1.push(keys1)
+            }
+            var dicttot = countWordsTot
+            var totkeys = Object.entries(dicttot).sort((a,b)=>b[1]-a[1]).map(el=>el[0])
+            totkeys = totkeys.slice(0,20)
+            console.log(countWords1)
+            console.log(totkeys)
+
+
+            // var div = document.createElement('div');
+            // div.innerHTML = leftctx;
+            // div.style.textAlign='right'
+            // document.getElementById("leftconc").appendChild(div);
+            // var div = document.createElement('div');
+            // div.innerHTML = keywordctx;
+            // div.style.textAlign='center'
+            // div.style.color = "red";
+            // document.getElementById("keyword").appendChild(div);
+            // var div = document.createElement('div');
+            // div.innerHTML = rightctx;
+            // document.getElementById("rightconc").appendChild(div);
+
+            var Mwidth = 1800
+            var colwidth = 200
+
+            var margin = {top: 50, right: 45, bottom: 80, left: 45},
+                width = (Mwidth) ,
+                height = 1000 ;
+            
+            svg1 = d3.select("#chart2").append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+                 .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); 
+
+
+
+            //Draw rectangles
+            var position = 0;
+
+
+            for (var col = 0; col < countWords.length; col++) {
+                var heigthUsed = 0;
+                var order = wordOrder1[col]
+                var max = countWords1[4][keyword1]
+                var colorswitch = 'gray'
+                console.log(max)
+                for (var word = 0; word < order.length; word++) {
+                    var wordstr = order[word]
+                    var boxH = countWords1[col][wordstr]
+                    var rect = svg1.append('rect')
+                   .attrs({ x: col*colwidth, y: heigthUsed, width: ((col+1)*(colwidth)-(col*colwidth)), height: 1000*((1.0*boxH)/max)  })
+                   .attr("id","s"+col.toString()+wordstr)
+                   .attr("fcol",color(wordstr))
+                   .style("fill",  function(d) { return col === 4 ? 'seagreen' : totkeys.includes(wordstr) ? color(wordstr): 'gray'; })
+                   // .style("stroke-color", 'black')
+                   // .style("stroke-width", 1)
+
+                   svg1.append("text")
+                    .attr("x", function(d) { return (col*colwidth)+100; })
+                    .attr("y", function(d) { return heigthUsed + ((1000*((1.0*boxH)/max)) / 2) + 5; })
+                    .style("text-anchor", "middle")
+                    .style("font-size", "16px")
+                    .attr("opacity", function(d) { return boxH > 12 ? 1 : 0; })
+                    .style("fill", "white") 
+                    .text(wordstr);
+
+                    heigthUsed+=1000*((1.0*boxH)/max) ;
+                    
+                }
+            }
+
+  });
+
+        });
+
+        
+
+
+
+      //   d3.csv("articles1.csv",  function(error, data) {
+      //     data.forEach(function(d) {
+              
+      //         // console.log(d)
+      //         d.slot = +d.time;
+      //         d.name = d.topic
+      //         if(topicStr.indexOf(d.name) === -1) {
+      //             topicStr.push(d.name);
+      //         }
+
+      //         var val = d.time;
+      //         if(countObj[val] === undefined) {
+      //             countObj[val] = 1;
+      //         } else {
+      //             countObj[val] = countObj[val] + 1;
+      //         }
+      //       });
+
+      //       // now store the count in each data member
+      //       data.forEach(function(d) {
+      //           var val = d.value;
+      //           d.count = countObj[val];
+      //       });
+  
+      // // Calculate width and heigth based on num topics and timeslots
+      //   var max = d3.max( data, function(d) { return d.slot; }) + 1;    
+      //   var year =0;
+      //   var margin = {top: 50, right: 45, bottom: 80, left: 45},
+      //    width = (130 *max) - margin.left - margin.right,
+      //    height = (200 * topicStr.length ) - margin.top - margin.bottom;
+
+
+      //   svg = d3.select("#chart").append("svg")
+      //     .attr("width", width + margin.left + margin.right)
+      //     .attr("height", height + margin.top + margin.bottom)
+      //   .append("g")
+      //     .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); 
+     
+      //   //AXIS CODE
+      //   var xRange = d3.scale.linear().domain([0,max]).range([0, width]);
+
+      //   var xAxis = d3.svg.axis().scale(xRange).orient("bottom").tickFormat(function(d, i) {
+      //     var seconds =( Math.floor( d * 1.5) === 0) ?  0 :  60 * ( (d * 1.5) % Math.floor(d * 1.5) );
+      //     return "Slot " + (year+d); 
+      //   });;
+
+      //   var color = d3.scale.category10();
+
+      //   var dict = {};
+      //   topicStr.forEach(function (item, index) {
+      //          dict[item] = index;
+      //     });
+
+      //   svg.append("g")
+      //     .attr("class", "axis")
+      //     .attr("transform", "translate(0," + height + ")")
+      //     .style("stroke-width", 1)
+      //     .call(xAxis);
+
+      //   //Add border
+      //   var borderPath = svg.append("rect")
+      //   .attr("x", 0)
+      //   .attr("y", 0)
+      //   .attr("height", height)
+      //   .attr("width", width)
+      //   .style("fill", "none")
+      //   .style("stroke-width", 1);
+
+      //   //Draw rectangles
+      //   var position = 0;
+      //   var heigthUsed = 0;
+
+      //   var timeslot;
+      //   var userSpeach;
+      //   var firstClick = 0;
+      //   var selected;
+
+      //   // Legend
+      //   topicStr.forEach(function (item, index) {
+      //          var div = document.createElement('div');
+      //          div.className = 'legend2';
+
+      //          var p = document.createElement('p');
+      //          p.className = 'country-name';
+      //          p.textContent = item;
+      //          div.appendChild(p);
+
+      //          var span = document.createElement('span');
+      //          span.className = 'key-dot';
+      //          span.style.backgroundColor = color(index)
+               
+      //          p.appendChild(span);
+      //          document.getElementById("legend").appendChild(div);
+      //     });
+
+      //   // Build the Mosaic
+      //   data.forEach(function(d) {
+      //       
+       // height * d.topic_size;
+
+      //       if(d.slot > position){
+      //         position = d.slot;
+      //         heigthUsed = 0;
+      //       }
+
+      //       var identifier = dict[d.name]
+      //       var fcol = color(identifier);
+      //       var words = d.words;
+      //       var lsWords = words.split(" ");
+      //       var i;
+
+      //       //tiles
+      //       var rect = svg.append('rect')
+      //          .attrs({ x: xRange(d.slot), y: heigthUsed, width: xRange(d.slot + 1) - xRange(d.slot) + 1, height: boxH  })
+      //          .attr("id","s"+d.slot.toString()+"p"+identifier.toString())
+      //          .attr("fcol",fcol)
+      //          .style("fill",  fcol)
+      //          .style("stroke-width", 1)
+      //          // Click Interaction
+      //          .on('click', function(data,i) {
+      //               if (firstClick === 1) {
+      //                   selected.style("fill",  selected.attr("fcol"));
+      //                   selected.style("fill-opacity", 1);
+      //               }
+      //               $('#transcript div').empty();
+      //               // On click get articles and highlight
+      //               fileList = d.filenames.split(" ");
+      //               var htmlString ="";
+      //               for (var i = 0; i < fileList.length; i++) {
+      //                  htmlString += articleJSON[fileList[i]].toLowerCase();;
+      //               }
+      //               for (var i = 0; i < lsWords.length; i++) {
+      //                  htmlString = htmlString.replaceAll($.trim(lsWords[i]), "<b class=\"contextText\" style=\" color:"+fcol+"; font-size:24px;\">"+lsWords[i]+"</b>")
+      //               }
+
+      //               var div = document.createElement('div');
+      //               div.innerHTML = htmlString;
+      //               document.getElementById("transcript").appendChild(div);
+
+      //               selected=rect;
+      //               rect.style("fill-opacity", 0.60);
+
+      //               firstClick = 1;
+      //             });
+
+      //       for (i = 0; i < lsWords.length; i++) { 
+      //           var text = lsWords[i];
+      //           svg.append("text")
+      //             .attr("class", "label")
+      //             .attr("x", xRange(d.slot) + ((xRange(d.slot+1) - xRange(d.slot) +1)/2) )
+      //             .attr("y", heigthUsed + i*( (d.topic_size * height) / lsWords.length )+ ( (d.topic_size * height) / lsWords.length )/2  )
+      //             //.attr("y", (height/12)/2 + (heigthUsed) + (height/12)*i  )
+      //             .style("text-anchor", "middle")
+      //             .style("font-size", "14px")
+      //             .style("fill", "white") 
+      //             .text(text)
+      //             ;
+      //       }
+      //       heigthUsed = heigthUsed + boxH;
+      // });
+
+
+      // });
+    </script>
+
+ </body>
+</html>
+
